@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>이상기체 시뮬레이션</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: Arial, sans-serif;
+      }
+      canvas {
+        border: 1px solid black;
+      }
+      .controls {
+        margin: 20px;
+      }
+      label {
+        margin-right: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>이상기체 방정식 시뮬레이션</h1>
+    <div class="controls">
+      <label>압력 (P): <input id="pressure" type="number" value="1" step="0.1" /></label>
+      <label>부피 (V): <input id="volume" type="number" value="1" step="0.1" /></label>
+      <label>온도 (T): <input id="temperature" type="number" value="300" step="10" /></label>
+      <button onclick="resetSimulation()">시뮬레이션 시작</button>
+    </div>
+    <p>입자 개수 (n): <span id="particleCount"></span></p>
+    <script>
+      let particles = [];
+      let boxSize = 300; // 시뮬레이션 영역 크기
+      let maxParticles = 200; // 입자 최대 개수
+      let minParticles = 3; // 입자 최소 개수
+      let particleRadius = 5; // 입자 크기
+      let n = 3; // 몰수에 따른 기본 입자 개수
+      let maxSpeed = 5; // 속도 제한
+
+      function setup() {
+        createCanvas(boxSize, boxSize).parent(document.body);
+        resetSimulation();
+      }
+
+      function resetSimulation() {
+        // 입력값 가져오기
+        let pressure = parseFloat(document.getElementById("pressure").value);
+        let volume = parseFloat(document.getElementById("volume").value);
+        let temperature = parseFloat(document.getElementById("temperature").value);
+
+        // 이상기체 방정식에 따른 입자 개수 계산
+        n = Math.round((pressure * volume) / (0.0821 * temperature));
+        n = constrain(n, minParticles, maxParticles); // 입자 개수 제한
+
+        // 입자 초기화
+        particles = [];
+        for (let i = 0; i < n; i++) {
+          particles.push(new Particle(pressure, temperature));
+        }
+
+        // 입자 개수 표시
+        document.getElementById("particleCount").textContent = n;
+      }
+
+      function draw() {
+        background(255); // 흰색 배경
+        rect(0, 0, boxSize, boxSize); // 시뮬레이션 영역
+
+        for (let particle of particles) {
+          particle.move();
+          particle.show();
+        }
+      }
+
+      class Particle {
+        constructor(pressure, temperature) {
+          this.x = random(boxSize);
+          this.y = random(boxSize);
+
+          // 속도는 압력과 온도에 비례하며 제한을 둠
+          this.vx = constrain(random(-1, 1) * sqrt(pressure * temperature) / 10, -maxSpeed, maxSpeed);
+          this.vy = constrain(random(-1, 1) * sqrt(pressure * temperature) / 10, -maxSpeed, maxSpeed);
+
+          this.strokeColor = color(0); // 테두리는 검정색
+        }
+
+        move() {
+          this.x += this.vx;
+          this.y += this.vy;
+
+          // 벽 충돌 처리
+          if (this.x <= 0 || this.x >= boxSize) this.vx *= -1;
+          if (this.y <= 0 || this.y >= boxSize) this.vy *= -1;
+        }
+
+        show() {
+          noFill(); // 내부를 투명하게 설정
+          stroke(this.strokeColor); // 검정색 테두리
+          ellipse(this.x, this.y, particleRadius * 2);
+        }
+      }
+    </script>
+  </body>
+</html>
